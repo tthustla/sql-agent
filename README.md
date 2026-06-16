@@ -4,6 +4,8 @@ A text-to-SQL agent over a local DuckDB warehouse, built as portfolio project 1 
 
 The agent uses the [Anthropic Messages API](https://docs.anthropic.com/en/api/messages) with tool use to answer natural-language questions about an e-commerce dataset. It demonstrates how an **agentic loop** works: a model that repeatedly calls tools, observes results, and decides what to do next until it can give a final answer.
 
+The loop also includes a few production-minded guardrails: batched tool-result turns for parallel tool calls, automatic retry/backoff around model requests, and explicit handling for incomplete `max_tokens` responses.
+
 ---
 
 ## How it works
@@ -18,9 +20,10 @@ User question
 │  while stop_reason == "tool_use":       │
 │    1. Call Claude with tools + messages │
 │    2. Dispatch tool calls               │
-│    3. Append results to messages        │
+│    3. Batch tool results into one turn  │
+│    4. Append results to messages        │
 │                                         │
-│  return final text answer               │
+│  return concatenated final text         │
 └─────────────────────────────────────────┘
      │                    │
      ▼                    ▼
@@ -103,6 +106,8 @@ Example output:
 
 The Electronics category had the most revenue at $14,398.20.
 ```
+
+If the model exhausts its output budget, the agent returns an explicit error with the partial response instead of treating it as a completed answer.
 
 ---
 

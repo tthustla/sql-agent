@@ -44,6 +44,34 @@ def test_end_turn_with_no_tools():
     assert mock_create.call_count == 1
 
 
+def test_end_turn_concatenates_multiple_text_blocks():
+    """Final answers include all text blocks from the last model turn."""
+    mock_create = MagicMock(return_value=api_response(
+        "end_turn", text_block("Part one. "), text_block("Part two.")
+    ))
+
+    with patch.object(agent.client.messages, "create", mock_create):
+        result = agent.run_agent("Give me a two-part answer.")
+
+    assert result == "Part one. Part two."
+
+
+def test_model_call_retries_after_transient_failure():
+    """A transient model-call error is retried by the backoff wrapper."""
+    mock_create = MagicMock(side_effect=[
+        RuntimeError("temporary outage"),
+        api_response("end_turn", text_block("Recovered answer.")),
+    ])
+
+    with patch.object(agent.client.messages, "create", mock_create), \
+         patch("backoff._sync.time.sleep") as mock_sleep:
+        result = agent.run_agent("Try again.")
+
+    assert result == "Recovered answer."
+    assert mock_create.call_count == 2
+    mock_sleep.assert_called_once()
+
+
 def test_single_tool_call_then_end_turn():
     """Model makes one tool call, gets the result, then gives a final answer."""
     mock_create = MagicMock(side_effect=[
@@ -104,6 +132,18 @@ def test_multiple_tool_calls_in_one_turn():
     tool_result_turn = second_call_messages[-2]
     assert tool_result_turn["role"] == "user"
     assert len(tool_result_turn["content"]) == 2
+
+
+def test_max_tokens_returns_error_with_partial_text():
+    """A max_tokens stop reason returns an explicit error and partial answer text."""
+    mock_create = MagicMock(return_value=api_response(
+        "max_tokens", text_block("Partial "), text_block("answer")
+    ))
+
+    with patch.object(agent.client.messages, "create", mock_create):
+        result = agent.run_agent("Give me a very long answer.")
+
+    assert result == "ERROR: model hit max_tokens before finishing. Partial response:\nPartial answer"
 
 
 def test_max_steps_exceeded():

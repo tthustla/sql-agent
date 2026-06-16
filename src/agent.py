@@ -5,6 +5,7 @@ SQL agent — agentic loop.
 import os
 
 import anthropic
+import backoff
 from dotenv import load_dotenv
 
 from tools import TOOLS, TOOL_MAP
@@ -26,19 +27,27 @@ Always prefer precise SQL over guessing. If a query returns an error, fix it and
 """
 
 
+@backoff.on_exception(backoff.expo, Exception, max_tries=3)
+def _create_message(messages):
+    return client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=2048,
+        system=SYSTEM,
+        tools=TOOLS,
+        messages=messages,
+    )
+
+
 def run_agent(question: str, max_steps: int = 10) -> str:
     messages = [{"role": "user", "content": question}]
     step = 0
     while step < max_steps:
         step += 1
 
-        response = client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=2048,
-            system=SYSTEM,
-            tools=TOOLS,
-            messages=messages,
-        )
+        try:
+            response = _create_message(messages)
+        except Exception as e:
+            return f"ERROR: model call failed after retries: {e}"
 
         print(f"\n[Turn {step}]")
 
@@ -52,12 +61,21 @@ def run_agent(question: str, max_steps: int = 10) -> str:
                         print(f"  Input : {key} = {val}")
 
         messages.append({"role": "assistant", "content": response.content})
+        # This simple agent keeps full history. For short SQL tasks that's fine,
+        # but a longer-running agent would need context compaction here.
 
         if response.stop_reason != "tool_use":
-            for block in reversed(response.content):
-                if block.type == "text":
-                    return block.text
-            return ""
+            if response.stop_reason == "max_tokens":
+                partial_text = "".join(
+                    block.text for block in response.content if block.type == "text"
+                )
+                return (
+                    "ERROR: model hit max_tokens before finishing. "
+                    f"Partial response:\n{partial_text}"
+                )
+            return "".join(
+                block.text for block in response.content if block.type == "text"
+            )
 
         tool_results = []
         for block in response.content:
