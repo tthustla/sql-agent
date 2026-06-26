@@ -36,8 +36,8 @@ def main():
             sys.exit(1)
 
     print()
-    answer = run_agent(question, max_steps=args.max_steps)
-    print(answer)
+    result = run_agent(question, max_steps=args.max_steps)
+    print(result.final_answer)
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@ SQL agent — agentic loop.
 """
 
 import os
+from dataclasses import dataclass
 
 import anthropic
 import backoff
@@ -27,6 +28,15 @@ Always prefer precise SQL over guessing. If a query returns an error, fix it and
 """
 
 
+@dataclass
+class AgentResult:
+    final_answer: str
+    sql_queries: list[str]
+    steps: int
+    last_stop_reason: str
+    error: str | None = None
+
+
 @backoff.on_exception(backoff.expo, Exception, max_tries=3)
 def _create_message(messages):
     return client.messages.create(
@@ -38,27 +48,25 @@ def _create_message(messages):
     )
 
 
-def run_agent(question: str, max_steps: int = 10) -> str:
+def run_agent(question: str, max_steps: int = 10) -> AgentResult:
     messages = [{"role": "user", "content": question}]
     step = 0
+    sql_queries: list[str] = []
+
     while step < max_steps:
         step += 1
 
         try:
             response = _create_message(messages)
         except Exception as e:
-            return f"ERROR: model call failed after retries: {e}"
-
-        print(f"\n[Turn {step}]")
-
-        for block in response.content:
-            if block.type == "text" and response.stop_reason == "tool_use":
-                print(f"  Claude: {block.text}")
-            elif block.type == "tool_use":
-                print(f"  Tool  : {block.name}")
-                if block.input:
-                    for key, val in block.input.items():
-                        print(f"  Input : {key} = {val}")
+            error_msg = f"ERROR: model call failed after retries: {e}"
+            return AgentResult(
+                final_answer=error_msg,
+                sql_queries=sql_queries,
+                steps=step,
+                last_stop_reason="error",
+                error=str(e),
+            )
 
         messages.append({"role": "assistant", "content": response.content})
         # This simple agent keeps full history. For short SQL tasks that's fine,
@@ -69,30 +77,41 @@ def run_agent(question: str, max_steps: int = 10) -> str:
                 partial_text = "".join(
                     block.text for block in response.content if block.type == "text"
                 )
-                return (
-                    "ERROR: model hit max_tokens before finishing. "
-                    f"Partial response:\n{partial_text}"
+                return AgentResult(
+                    final_answer=(
+                        "ERROR: model hit max_tokens before finishing. "
+                        f"Partial response:\n{partial_text}"
+                    ),
+                    sql_queries=sql_queries,
+                    steps=step,
+                    last_stop_reason=response.stop_reason,
+                    error="max_tokens reached",
                 )
-            return "".join(
-                block.text for block in response.content if block.type == "text"
+            return AgentResult(
+                final_answer="".join(
+                    block.text for block in response.content if block.type == "text"
+                ),
+                sql_queries=sql_queries,
+                steps=step,
+                last_stop_reason=response.stop_reason,
             )
 
         tool_results = []
         for block in response.content:
             if block.type != "tool_use":
                 continue
+
+            if block.name == "run_sql" and "query" in block.input:
+                sql_queries.append(block.input["query"])
+
             fn = TOOL_MAP.get(block.name)
             if fn is None:
                 result = f"ERROR: unknown tool '{block.name}'"
-                print(f"  Error : {result}")
             else:
                 try:
                     result = fn(**block.input)
                 except Exception as e:
                     result = f"ERROR: {e}"
-                    print(f"  Error : {e}")
-                else:
-                    print(f"  Result: {result[:300]}{'...' if len(result) > 300 else ''}")
             tool_results.append(
                 {
                     "type": "tool_result",
@@ -103,4 +122,11 @@ def run_agent(question: str, max_steps: int = 10) -> str:
 
         messages.append({"role": "user", "content": tool_results})
 
-    return f"Error: agent did not complete within {max_steps} steps."
+    error_msg = f"Error: agent did not complete within {max_steps} steps."
+    return AgentResult(
+        final_answer=error_msg,
+        sql_queries=sql_queries,
+        steps=step,
+        last_stop_reason="max_steps",
+        error=error_msg,
+    )

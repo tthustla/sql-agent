@@ -1,0 +1,802 @@
+{
+  "timestamp": "20260626T141142Z",
+  "n_cases": 20,
+  "exec_accuracy_pct": 85.0,
+  "judge_accuracy_pct": 100.0,
+  "overall_accuracy_pct": 92.5,
+  "judge_verdict_counts": {
+    "correct": 20
+  },
+  "cases": [
+    {
+      "id": "lookup-001",
+      "category": "lookup",
+      "question": "What is the price of the Mechanical Keyboard?",
+      "gold_answer": "129.99",
+      "final_answer": "The price of the **Mechanical Keyboard** is **$129.99**.",
+      "sql_queries": [
+        "SELECT name, price FROM products WHERE name = 'Mechanical Keyboard'"
+      ],
+      "steps": 2,
+      "last_stop_reason": "end_turn",
+      "error": null,
+      "exec_accurate": false,
+      "exec_detail": {
+        "passed": false,
+        "reason": "Gold and agent results differ when compared as an unordered row multiset.",
+        "gold_sql": "SELECT price FROM products WHERE name = 'Mechanical Keyboard'",
+        "agent_sql": "SELECT name, price FROM products WHERE name = 'Mechanical Keyboard'",
+        "gold_rows": [
+          [
+            "129.99"
+          ]
+        ],
+        "agent_rows": [
+          [
+            "Mechanical Keyboard",
+            "129.99"
+          ]
+        ]
+      },
+      "judge": {
+        "verdict": "correct",
+        "reason": "The agent provides the correct price value of 129.99 with harmless formatting differences (currency symbol and bold formatting)."
+      }
+    },
+    {
+      "id": "lookup-002",
+      "category": "lookup",
+      "question": "What are the category and price of the Mechanical Keyboard?",
+      "gold_answer": "Electronics, 129.99",
+      "final_answer": "Here are the details for the **Mechanical Keyboard**:\n\n- **Category:** Electronics\n- **Price:** $129.99",
+      "sql_queries": [
+        "SELECT category, price FROM products WHERE name = 'Mechanical Keyboard';"
+      ],
+      "steps": 3,
+      "last_stop_reason": "end_turn",
+      "error": null,
+      "exec_accurate": true,
+      "exec_detail": {
+        "passed": true,
+        "reason": "Gold and agent results match as an unordered row multiset.",
+        "gold_sql": "SELECT category, price FROM products WHERE name = 'Mechanical Keyboard'",
+        "agent_sql": "SELECT category, price FROM products WHERE name = 'Mechanical Keyboard';",
+        "gold_rows": [
+          [
+            "Electronics",
+            "129.99"
+          ]
+        ],
+        "agent_rows": [
+          [
+            "Electronics",
+            "129.99"
+          ]
+        ]
+      },
+      "judge": {
+        "verdict": "correct",
+        "reason": "The agent answer provides the correct category (Electronics) and price (129.99) for the Mechanical Keyboard, with only harmless formatting differences from the reference answer."
+      }
+    },
+    {
+      "id": "lookup-003",
+      "category": "lookup",
+      "question": "Which country is Uma Garcia from, and when did they sign up?",
+      "gold_answer": "Uma Garcia is from the US and signed up on 2024-10-08.",
+      "final_answer": "Uma Garcia is from the **United States (US)** and signed up on **October 8, 2024**.",
+      "sql_queries": [
+        "SELECT country, signup_date FROM customers WHERE name = 'Uma Garcia'"
+      ],
+      "steps": 2,
+      "last_stop_reason": "end_turn",
+      "error": null,
+      "exec_accurate": true,
+      "exec_detail": {
+        "passed": true,
+        "reason": "Gold and agent results match as an unordered row multiset.",
+        "gold_sql": "SELECT country, signup_date FROM customers WHERE name = 'Uma Garcia'",
+        "agent_sql": "SELECT country, signup_date FROM customers WHERE name = 'Uma Garcia'",
+        "gold_rows": [
+          [
+            "US",
+            "2024-10-08"
+          ]
+        ],
+        "agent_rows": [
+          [
+            "US",
+            "2024-10-08"
+          ]
+        ]
+      },
+      "judge": {
+        "verdict": "correct",
+        "reason": "The agent answer correctly identifies Uma Garcia as being from the US and provides the signup date of October 8, 2024, which is the same date as the reference answer (2024-10-08), with only harmless formatting differences in date presentation."
+      }
+    },
+    {
+      "id": "agg-001",
+      "category": "aggregation",
+      "question": "How many total orders are in the database?",
+      "gold_answer": "500",
+      "final_answer": "There are **500 total orders** in the database.",
+      "sql_queries": [
+        "SELECT COUNT(*) AS total_orders FROM orders;"
+      ],
+      "steps": 2,
+      "last_stop_reason": "end_turn",
+      "error": null,
+      "exec_accurate": true,
+      "exec_detail": {
+        "passed": true,
+        "reason": "Gold and agent results match as an unordered row multiset.",
+        "gold_sql": "SELECT COUNT(*) FROM orders",
+        "agent_sql": "SELECT COUNT(*) AS total_orders FROM orders;",
+        "gold_rows": [
+          [
+            "500"
+          ]
+        ],
+        "agent_rows": [
+          [
+            "500"
+          ]
+        ]
+      },
+      "judge": {
+        "verdict": "correct",
+        "reason": "The agent correctly identified that there are 500 total orders in the database, matching the reference answer despite the different presentation format."
+      }
+    },
+    {
+      "id": "agg-002",
+      "category": "aggregation",
+      "question": "How many distinct countries are represented in the customer base?",
+      "gold_answer": "8",
+      "final_answer": "There are **8 distinct countries** represented in the customer base. Would you like to see a breakdown of which countries they are and how many customers come from each?",
+      "sql_queries": [
+        "SELECT COUNT(DISTINCT country) AS distinct_countries FROM customers;"
+      ],
+      "steps": 3,
+      "last_stop_reason": "end_turn",
+      "error": null,
+      "exec_accurate": true,
+      "exec_detail": {
+        "passed": true,
+        "reason": "Gold and agent results match as an unordered row multiset.",
+        "gold_sql": "SELECT COUNT(DISTINCT country) FROM customers",
+        "agent_sql": "SELECT COUNT(DISTINCT country) AS distinct_countries FROM customers;",
+        "gold_rows": [
+          [
+            "8"
+          ]
+        ],
+        "agent_rows": [
+          [
+            "8"
+          ]
+        ]
+      },
+      "judge": {
+        "verdict": "correct",
+        "reason": "The agent's answer of 8 distinct countries matches the reference answer exactly, with the additional offer to provide breakdown details being a harmless conversational addition."
+      }
+    },
+    {
+      "id": "agg-003",
+      "category": "aggregation",
+      "question": "What is the average product price?",
+      "gold_answer": "37.9415, or about $37.94 rounded to two decimal places",
+      "final_answer": "The **average product price is $37.94**. This is calculated across all products in the `products` table.",
+      "sql_queries": [
+        "SELECT AVG(price) AS average_price FROM products"
+      ],
+      "steps": 2,
+      "last_stop_reason": "end_turn",
+      "error": null,
+      "exec_accurate": true,
+      "exec_detail": {
+        "passed": true,
+        "reason": "Gold and agent results match as an unordered row multiset.",
+        "gold_sql": "SELECT AVG(price) FROM products",
+        "agent_sql": "SELECT AVG(price) AS average_price FROM products",
+        "gold_rows": [
+          [
+            "37.941500000000005"
+          ]
+        ],
+        "agent_rows": [
+          [
+            "37.941500000000005"
+          ]
+        ]
+      },
+      "judge": {
+        "verdict": "correct",
+        "reason": "The agent correctly identified the average product price as $37.94, which matches the reference answer when rounded to two decimal places."
+      }
+    },
+    {
+      "id": "agg-004",
+      "category": "aggregation",
+      "question": "How many items have been ordered in total?",
+      "gold_answer": "985 items have been ordered in total.",
+      "final_answer": "A total of **985 items** have been ordered across all orders in the database. This is calculated by summing up the `quantity` field from every order record.",
+      "sql_queries": [
+        "SELECT SUM(quantity) AS total_items_ordered FROM orders;"
+      ],
+      "steps": 3,
+      "last_stop_reason": "end_turn",
+      "error": null,
+      "exec_accurate": true,
+      "exec_detail": {
+        "passed": true,
+        "reason": "Gold and agent results match as an unordered row multiset.",
+        "gold_sql": "SELECT SUM(quantity) FROM orders",
+        "agent_sql": "SELECT SUM(quantity) AS total_items_ordered FROM orders;",
+        "gold_rows": [
+          [
+            "985"
+          ]
+        ],
+        "agent_rows": [
+          [
+            "985"
+          ]
+        ]
+      },
+      "judge": {
+        "verdict": "correct",
+        "reason": "The agent's answer states 985 items have been ordered in total, which matches the reference answer exactly, with only harmless wording differences in presentation."
+      }
+    },
+    {
+      "id": "date-001",
+      "category": "date_range",
+      "question": "How many orders were placed in January 2025?",
+      "gold_answer": "39 orders were placed in January 2025.",
+      "final_answer": "There were **39 orders** placed in January 2025.",
+      "sql_queries": [
+        "SELECT COUNT(*) AS order_count FROM orders WHERE order_date >= '2025-01-01' AND order_date < '2025-02-01'"
+      ],
+      "steps": 3,
+      "last_stop_reason": "end_turn",
+      "error": null,
+      "exec_accurate": true,
+      "exec_detail": {
+        "passed": true,
+        "reason": "Gold and agent results match as an unordered row multiset.",
+        "gold_sql": "SELECT COUNT(*) FROM orders WHERE order_date >= DATE '2025-01-01' AND order_date < DATE '2025-02-01'",
+        "agent_sql": "SELECT COUNT(*) AS order_count FROM orders WHERE order_date >= '2025-01-01' AND order_date < '2025-02-01'",
+        "gold_rows": [
+          [
+            "39"
+          ]
+        ],
+        "agent_rows": [
+          [
+            "39"
+          ]
+        ]
+      },
+      "judge": {
+        "verdict": "correct",
+        "reason": "The agent correctly identified that 39 orders were placed in January 2025, matching the reference answer with only harmless formatting differences."
+      }
+    },
+    {
+      "id": "date-002",
+      "category": "date_range",
+      "question": "How many orders were placed in each month of the first quarter of 2025? List the months chronologically.",
+      "gold_answer": "2025-01: 39; 2025-02: 59; 2025-03: 62.",
+      "final_answer": "Here's a breakdown of orders placed in each month of **Q1 2025**:\n\n| Month    | Orders Placed |\n|----------|--------------|\n| January  | 39           |\n| February | 59           |\n| March    | 62           |\n| **Total**| **160**      |\n\n**Key Takeaways:**\n- \ud83d\udcc8 **Order volume grew steadily** throughout the quarter.\n- **March** was the busiest month with **62 orders**.\n- **January** had the fewest orders at **39**, roughly **37% less** than March.\n- Overall, **160 orders** were placed in Q1 2025.",
+      "sql_queries": [
+        "\nSELECT\n    STRFTIME('%B', order_date) AS month,\n    MONTH(order_date) AS month_num,\n    COUNT(*) AS order_count\nFROM orders\nWHERE order_date >= '2025-01-01' AND order_date < '2025-04-01'\nGROUP BY month, month_num\nORDER BY month_num;\n"
+      ],
+      "steps": 3,
+      "last_stop_reason": "end_turn",
+      "error": null,
+      "exec_accurate": false,
+      "exec_detail": {
+        "passed": false,
+        "reason": "Gold and agent results differ when compared as an ordered row sequence.",
+        "gold_sql": "SELECT strftime(order_date, '%Y-%m') AS month, COUNT(*) AS orders FROM orders WHERE order_date >= DATE '2025-01-01' AND order_date < DATE '2025-04-01' GROUP BY month ORDER BY month",
+        "agent_sql": "\nSELECT\n    STRFTIME('%B', order_date) AS month,\n    MONTH(order_date) AS month_num,\n    COUNT(*) AS order_count\nFROM orders\nWHERE order_date >= '2025-01-01' AND order_date < '2025-04-01'\nGROUP BY month, month_num\nORDER BY month_num;\n",
+        "gold_rows": [
+          [
+            "2025-01",
+            "39"
+          ],
+          [
+            "2025-02",
+            "59"
+          ],
+          [
+            "2025-03",
+            "62"
+          ]
+        ],
+        "agent_rows": [
+          [
+            "January",
+            "1",
+            "39"
+          ],
+          [
+            "February",
+            "2",
+            "59"
+          ],
+          [
+            "March",
+            "3",
+            "62"
+          ]
+        ]
+      },
+      "judge": {
+        "verdict": "correct",
+        "reason": "The agent answer provides the correct order counts for each month of Q1 2025 (January: 39, February: 59, March: 62) in chronological order, with only harmless differences in presentation format and additional context."
+      }
+    },
+    {
+      "id": "date-003",
+      "category": "date_range",
+      "question": "How many customers signed up from January 1 through March 31, 2025, inclusive?",
+      "gold_answer": "15 customers signed up during that date range.",
+      "final_answer": "**15 customers** signed up between January 1 and March 31, 2025, inclusive.",
+      "sql_queries": [
+        "\nSELECT COUNT(*) AS customer_count\nFROM customers\nWHERE signup_date BETWEEN '2025-01-01' AND '2025-03-31'\n"
+      ],
+      "steps": 2,
+      "last_stop_reason": "end_turn",
+      "error": null,
+      "exec_accurate": true,
+      "exec_detail": {
+        "passed": true,
+        "reason": "Gold and agent results match as an unordered row multiset.",
+        "gold_sql": "SELECT COUNT(*) FROM customers WHERE signup_date BETWEEN DATE '2025-01-01' AND DATE '2025-03-31'",
+        "agent_sql": "\nSELECT COUNT(*) AS customer_count\nFROM customers\nWHERE signup_date BETWEEN '2025-01-01' AND '2025-03-31'\n",
+        "gold_rows": [
+          [
+            "15"
+          ]
+        ],
+        "agent_rows": [
+          [
+            "15"
+          ]
+        ]
+      },
+      "judge": {
+        "verdict": "correct",
+        "reason": "The agent answer provides the correct numerical result (15 customers) for the specified date range with identical semantic meaning to the reference answer."
+      }
+    },
+    {
+      "id": "null-001",
+      "category": "null_handling",
+      "question": "How many orders have a missing quantity?",
+      "gold_answer": "No orders have a missing quantity.",
+      "final_answer": "There are **0 orders with a missing quantity**. Every order in the `orders` table has a value recorded in the `quantity` column \u2014 no nulls exist. The data appears to be complete for that field! \u2705",
+      "sql_queries": [
+        "SELECT COUNT(*) AS orders_with_missing_quantity FROM orders WHERE quantity IS NULL;"
+      ],
+      "steps": 3,
+      "last_stop_reason": "end_turn",
+      "error": null,
+      "exec_accurate": true,
+      "exec_detail": {
+        "passed": true,
+        "reason": "Gold and agent results match as an unordered row multiset.",
+        "gold_sql": "SELECT COUNT(*) FROM orders WHERE quantity IS NULL",
+        "agent_sql": "SELECT COUNT(*) AS orders_with_missing_quantity FROM orders WHERE quantity IS NULL;",
+        "gold_rows": [
+          [
+            "0"
+          ]
+        ],
+        "agent_rows": [
+          [
+            "0"
+          ]
+        ]
+      },
+      "judge": {
+        "verdict": "correct",
+        "reason": "The agent's answer of 0 orders with missing quantity matches the reference answer, with only minor wording differences in presentation."
+      }
+    },
+    {
+      "id": "null-002",
+      "category": "null_handling",
+      "question": "How many customers have never placed an order?",
+      "gold_answer": "1 customer has never placed an order.",
+      "final_answer": "**1 customer** has never placed an order. They exist in the `customers` table but have no corresponding entries in the `orders` table. Would you like to know who that customer is or get more details about them?",
+      "sql_queries": [
+        "\nSELECT COUNT(*) AS customers_with_no_orders\nFROM customers c\nWHERE NOT EXISTS (\n    SELECT 1\n    FROM orders o\n    WHERE o.customer_id = c.id\n)\n"
+      ],
+      "steps": 3,
+      "last_stop_reason": "end_turn",
+      "error": null,
+      "exec_accurate": true,
+      "exec_detail": {
+        "passed": true,
+        "reason": "Gold and agent results match as an unordered row multiset.",
+        "gold_sql": "SELECT COUNT(*) FROM customers c LEFT JOIN orders o ON o.customer_id = c.id WHERE o.id IS NULL",
+        "agent_sql": "\nSELECT COUNT(*) AS customers_with_no_orders\nFROM customers c\nWHERE NOT EXISTS (\n    SELECT 1\n    FROM orders o\n    WHERE o.customer_id = c.id\n)\n",
+        "gold_rows": [
+          [
+            "1"
+          ]
+        ],
+        "agent_rows": [
+          [
+            "1"
+          ]
+        ]
+      },
+      "judge": {
+        "verdict": "correct",
+        "reason": "The agent correctly identifies that 1 customer has never placed an order, which matches the reference answer, with only harmless additional explanation provided."
+      }
+    },
+    {
+      "id": "join-001",
+      "category": "join",
+      "question": "What are the top 5 most-ordered products and how many times was each ordered? If there are ties, break them alphabetically by product name.",
+      "gold_answer": "1. Insulated Tumbler \u2014 34 orders\n2. Standing Desk Mat \u2014 32 orders\n3. Mechanical Keyboard \u2014 31 orders\n4. Yoga Mat \u2014 30 orders\n5. Jump Rope \u2014 29 orders",
+      "final_answer": "Here are the **top 5 most-ordered products**:\n\n| Rank | Product Name | Times Ordered |\n|------|----------------------|---------------|\n| 1 | Insulated Tumbler | 34 |\n| 2 | Standing Desk Mat | 32 |\n| 3 | Mechanical Keyboard | 31 |\n| 4 | Yoga Mat | 30 |\n| 5 | Jump Rope | 29 |\n\n**Key takeaways:**\n- \ud83e\udd47 **Insulated Tumbler** leads the pack with **34 orders**, making it the most popular product.\n- The top 5 are relatively close in order frequency, spanning just a **5-order range** (29\u201334).\n- There were no ties in this ranking, so the alphabetical tiebreaker wasn't needed.",
+      "sql_queries": [
+        "\nSELECT\n    p.name AS product_name,\n    COUNT(o.id) AS times_ordered\nFROM orders o\nJOIN products p ON o.product_id = p.id\nGROUP BY p.name\nORDER BY times_ordered DESC, p.name ASC\nLIMIT 5;\n"
+      ],
+      "steps": 3,
+      "last_stop_reason": "end_turn",
+      "error": null,
+      "exec_accurate": true,
+      "exec_detail": {
+        "passed": true,
+        "reason": "Gold and agent results match as an ordered row sequence.",
+        "gold_sql": "SELECT p.name, COUNT(*) AS order_count FROM orders o JOIN products p ON o.product_id = p.id GROUP BY p.name ORDER BY order_count DESC, p.name ASC LIMIT 5",
+        "agent_sql": "\nSELECT\n    p.name AS product_name,\n    COUNT(o.id) AS times_ordered\nFROM orders o\nJOIN products p ON o.product_id = p.id\nGROUP BY p.name\nORDER BY times_ordered DESC, p.name ASC\nLIMIT 5;\n",
+        "gold_rows": [
+          [
+            "Insulated Tumbler",
+            "34"
+          ],
+          [
+            "Standing Desk Mat",
+            "32"
+          ],
+          [
+            "Mechanical Keyboard",
+            "31"
+          ],
+          [
+            "Yoga Mat",
+            "30"
+          ],
+          [
+            "Jump Rope",
+            "29"
+          ]
+        ],
+        "agent_rows": [
+          [
+            "Insulated Tumbler",
+            "34"
+          ],
+          [
+            "Standing Desk Mat",
+            "32"
+          ],
+          [
+            "Mechanical Keyboard",
+            "31"
+          ],
+          [
+            "Yoga Mat",
+            "30"
+          ],
+          [
+            "Jump Rope",
+            "29"
+          ]
+        ]
+      },
+      "judge": {
+        "verdict": "correct",
+        "reason": "The agent's answer matches the reference answer exactly, listing all 5 products in the correct order with accurate order counts, and correctly noting that no alphabetical tiebreaker was needed."
+      }
+    },
+    {
+      "id": "join-002",
+      "category": "join",
+      "question": "Which three countries ordered the most units of Electronics products? Break ties alphabetically by country.",
+      "gold_answer": "1. US: 71 units; 2. BR: 30 units; 3. JP: 26 units.",
+      "final_answer": "Here are the **top 3 countries by units of Electronics products ordered**:\n\n| Rank | Country | Total Units |\n|------|---------|-------------|\n| \ud83e\udd47 1 | **US** (United States) | 71 |\n| \ud83e\udd48 2 | **BR** (Brazil) | 30 |\n| \ud83e\udd49 3 | **JP** (Japan) | 26 |\n\nThe **US dominates** by a wide margin with 71 units \u2014 more than double the second-place country, Brazil (30). Japan rounds out the top 3 with 26 units.",
+      "sql_queries": [
+        "\nSELECT\n    c.country,\n    SUM(o.quantity) AS total_units\nFROM orders o\nJOIN customers c ON o.customer_id = c.id\nJOIN products p  ON o.product_id  = p.id\nWHERE p.category = 'Electronics'\nGROUP BY c.country\nORDER BY total_units DESC, c.country ASC\nLIMIT 3;\n"
+      ],
+      "steps": 3,
+      "last_stop_reason": "end_turn",
+      "error": null,
+      "exec_accurate": true,
+      "exec_detail": {
+        "passed": true,
+        "reason": "Gold and agent results match as an ordered row sequence.",
+        "gold_sql": "SELECT c.country, SUM(o.quantity) AS units FROM customers c JOIN orders o ON o.customer_id = c.id JOIN products p ON p.id = o.product_id WHERE p.category = 'Electronics' GROUP BY c.country ORDER BY units DESC, c.country ASC LIMIT 3",
+        "agent_sql": "\nSELECT\n    c.country,\n    SUM(o.quantity) AS total_units\nFROM orders o\nJOIN customers c ON o.customer_id = c.id\nJOIN products p  ON o.product_id  = p.id\nWHERE p.category = 'Electronics'\nGROUP BY c.country\nORDER BY total_units DESC, c.country ASC\nLIMIT 3;\n",
+        "gold_rows": [
+          [
+            "US",
+            "71"
+          ],
+          [
+            "BR",
+            "30"
+          ],
+          [
+            "JP",
+            "26"
+          ]
+        ],
+        "agent_rows": [
+          [
+            "US",
+            "71"
+          ],
+          [
+            "BR",
+            "30"
+          ],
+          [
+            "JP",
+            "26"
+          ]
+        ]
+      },
+      "judge": {
+        "verdict": "correct",
+        "reason": "The agent answer identifies the same three countries (US, BR, JP) with the same unit quantities (71, 30, 26) in the same order as the reference answer, with only harmless formatting and explanatory differences."
+      }
+    },
+    {
+      "id": "join-003",
+      "category": "join",
+      "question": "How many customers in Canada have ordered an Electronics product?",
+      "gold_answer": "4 Canadian customers have ordered an Electronics product.",
+      "final_answer": "There are **4 unique customers** from Canada who have placed an order for an Electronics product. (Note: the country is stored as the code `'CA'` rather than the full name `'Canada'` in the database.)",
+      "sql_queries": [
+        "\nSELECT COUNT(DISTINCT c.id) AS canadian_electronics_customers\nFROM customers c\nJOIN orders o ON c.id = o.customer_id\nJOIN products p ON o.product_id = p.id\nWHERE c.country = 'Canada'\n  AND p.category = 'Electronics'\n",
+        "SELECT DISTINCT country FROM customers",
+        "SELECT DISTINCT category FROM products",
+        "\nSELECT COUNT(DISTINCT c.id) AS canadian_electronics_customers\nFROM customers c\nJOIN orders o ON c.id = o.customer_id\nJOIN products p ON o.product_id = p.id\nWHERE c.country = 'CA'\n  AND p.category = 'Electronics'\n"
+      ],
+      "steps": 5,
+      "last_stop_reason": "end_turn",
+      "error": null,
+      "exec_accurate": true,
+      "exec_detail": {
+        "passed": true,
+        "reason": "Gold and agent results match as an unordered row multiset.",
+        "gold_sql": "SELECT COUNT(DISTINCT c.id) FROM customers c JOIN orders o ON o.customer_id = c.id JOIN products p ON p.id = o.product_id WHERE c.country = 'CA' AND p.category = 'Electronics'",
+        "agent_sql": "\nSELECT COUNT(DISTINCT c.id) AS canadian_electronics_customers\nFROM customers c\nJOIN orders o ON c.id = o.customer_id\nJOIN products p ON o.product_id = p.id\nWHERE c.country = 'CA'\n  AND p.category = 'Electronics'\n",
+        "gold_rows": [
+          [
+            "4"
+          ]
+        ],
+        "agent_rows": [
+          [
+            "4"
+          ]
+        ]
+      },
+      "judge": {
+        "verdict": "correct",
+        "reason": "The agent correctly identified 4 customers from Canada who ordered Electronics products; the additional explanatory note about the country code storage is helpful context that does not contradict the reference answer."
+      }
+    },
+    {
+      "id": "join-004",
+      "category": "join",
+      "question": "Which customer bought the most items in total, and how many? Break ties alphabetically by customer name.",
+      "gold_answer": "Zoe Smith bought the most items, with 31 units.",
+      "final_answer": "**Zoe Smith** bought the most items in total, with **31 items** across all her orders. Ties were broken alphabetically by customer name, though she was the clear leader here.",
+      "sql_queries": [
+        "\nSELECT\n    c.name AS customer_name,\n    SUM(o.quantity) AS total_items\nFROM orders o\nJOIN customers c ON o.customer_id = c.id\nGROUP BY c.id, c.name\nORDER BY total_items DESC, c.name ASC\nLIMIT 1;\n"
+      ],
+      "steps": 3,
+      "last_stop_reason": "end_turn",
+      "error": null,
+      "exec_accurate": true,
+      "exec_detail": {
+        "passed": true,
+        "reason": "Gold and agent results match as an ordered row sequence.",
+        "gold_sql": "SELECT c.name, SUM(o.quantity) AS units FROM customers c JOIN orders o ON o.customer_id = c.id GROUP BY c.id, c.name ORDER BY units DESC, c.name ASC LIMIT 1",
+        "agent_sql": "\nSELECT\n    c.name AS customer_name,\n    SUM(o.quantity) AS total_items\nFROM orders o\nJOIN customers c ON o.customer_id = c.id\nGROUP BY c.id, c.name\nORDER BY total_items DESC, c.name ASC\nLIMIT 1;\n",
+        "gold_rows": [
+          [
+            "Zoe Smith",
+            "31"
+          ]
+        ],
+        "agent_rows": [
+          [
+            "Zoe Smith",
+            "31"
+          ]
+        ]
+      },
+      "judge": {
+        "verdict": "correct",
+        "reason": "The agent correctly identified Zoe Smith as the customer who bought the most items with 31 units, and properly noted the alphabetical tie-breaking criterion."
+      }
+    },
+    {
+      "id": "having-001",
+      "category": "having",
+      "question": "Which countries have at least 10 customers? Sort by customer count descending, then country alphabetically.",
+      "gold_answer": "US: 38; BR: 12; CA: 12; JP: 12; FR: 11.",
+      "final_answer": "Here are the countries with **at least 10 customers**, sorted by customer count (descending), then alphabetically:\n\n| # | Country | Customer Count |\n|---|---------|---------------|\n| 1 | US      | 38            |\n| 2 | BR      | 12            |\n| 3 | CA      | 12            |\n| 4 | JP      | 12            |\n| 5 | FR      | 11            |\n\n**Key takeaways:**\n- **5 countries** meet the threshold of 10+ customers.\n- **US** dominates with **38 customers**, far ahead of the rest.\n- **Brazil (BR), Canada (CA), and Japan (JP)** are tied at **12 customers** each.\n- **France (FR)** rounds out the list with **11 customers**.",
+      "sql_queries": [
+        "\nSELECT\n    country,\n    COUNT(*) AS customer_count\nFROM customers\nGROUP BY country\nHAVING COUNT(*) >= 10\nORDER BY customer_count DESC, country ASC\n"
+      ],
+      "steps": 3,
+      "last_stop_reason": "end_turn",
+      "error": null,
+      "exec_accurate": true,
+      "exec_detail": {
+        "passed": true,
+        "reason": "Gold and agent results match as an ordered row sequence.",
+        "gold_sql": "SELECT country, COUNT(*) AS customers FROM customers GROUP BY country HAVING COUNT(*) >= 10 ORDER BY customers DESC, country ASC",
+        "agent_sql": "\nSELECT\n    country,\n    COUNT(*) AS customer_count\nFROM customers\nGROUP BY country\nHAVING COUNT(*) >= 10\nORDER BY customer_count DESC, country ASC\n",
+        "gold_rows": [
+          [
+            "US",
+            "38"
+          ],
+          [
+            "BR",
+            "12"
+          ],
+          [
+            "CA",
+            "12"
+          ],
+          [
+            "JP",
+            "12"
+          ],
+          [
+            "FR",
+            "11"
+          ]
+        ],
+        "agent_rows": [
+          [
+            "US",
+            "38"
+          ],
+          [
+            "BR",
+            "12"
+          ],
+          [
+            "CA",
+            "12"
+          ],
+          [
+            "JP",
+            "12"
+          ],
+          [
+            "FR",
+            "11"
+          ]
+        ]
+      },
+      "judge": {
+        "verdict": "correct",
+        "reason": "The agent's answer contains all the correct countries with accurate customer counts in the proper sort order (by count descending, then alphabetically), despite using a different presentation format than the reference answer."
+      }
+    },
+    {
+      "id": "having-002",
+      "category": "having",
+      "question": "Which product categories have an average price above $40? Round to two decimal places and list highest average first.",
+      "gold_answer": "Electronics: $76.24; Bags: $42.24.",
+      "final_answer": "Here are the product categories with an average price above **$40**, ranked highest first:\n\n| Rank | Category | Average Price |\n|------|-------------|---------------|\n| 1 | **Electronics** | $76.24 |\n| 2 | **Bags** | $42.24 |\n\n**Key Takeaways:**\n- **Electronics** leads by a wide margin, with an average price of **$76.24** \u2014 nearly double that of the next category.\n- **Bags** narrowly clears the $40 threshold at **$42.24**.\n- All other categories in the catalog fall at or below $40 on average and did not make the cut.",
+      "sql_queries": [
+        "\nSELECT\n    category,\n    ROUND(AVG(price), 2) AS avg_price\nFROM products\nGROUP BY category\nHAVING AVG(price) > 40\nORDER BY avg_price DESC\n"
+      ],
+      "steps": 3,
+      "last_stop_reason": "end_turn",
+      "error": null,
+      "exec_accurate": true,
+      "exec_detail": {
+        "passed": true,
+        "reason": "Gold and agent results match as an ordered row sequence.",
+        "gold_sql": "SELECT category, ROUND(AVG(price), 2) AS average_price FROM products GROUP BY category HAVING AVG(price) > 40 ORDER BY average_price DESC, category ASC",
+        "agent_sql": "\nSELECT\n    category,\n    ROUND(AVG(price), 2) AS avg_price\nFROM products\nGROUP BY category\nHAVING AVG(price) > 40\nORDER BY avg_price DESC\n",
+        "gold_rows": [
+          [
+            "Electronics",
+            "76.24"
+          ],
+          [
+            "Bags",
+            "42.24"
+          ]
+        ],
+        "agent_rows": [
+          [
+            "Electronics",
+            "76.24"
+          ],
+          [
+            "Bags",
+            "42.24"
+          ]
+        ]
+      },
+      "judge": {
+        "verdict": "correct",
+        "reason": "The agent answer contains the exact same product categories and average prices as the reference answer, properly rounded to two decimal places and listed in the correct order from highest to lowest average price."
+      }
+    },
+    {
+      "id": "unanswerable-001",
+      "category": "unanswerable",
+      "question": "What is the average customer satisfaction rating for each product?",
+      "gold_answer": "This cannot be answered because the schema has no customer satisfaction rating column.",
+      "final_answer": "Unfortunately, **customer satisfaction ratings do not exist** in this warehouse. After a thorough inspection of all three tables, here's what's available:\n\n| Table | Columns |\n|---|---|\n| **customers** | id, name, country, signup_date |\n| **products** | id, name, category, price |\n| **orders** | id, customer_id, product_id, quantity, order_date |\n\nNone of these tables contain a satisfaction rating, review score, or any similar feedback metric.\n\nTo answer this question, the data would need to include a column such as a **rating**, **review score**, or **satisfaction score** \u2014 typically tied to an order or product. \n\nHere are a few suggestions:\n- **If this data exists elsewhere**, it would need to be loaded into the warehouse (e.g., a `reviews` or `ratings` table).\n- **As a proxy metric**, I could analyze something related like **order frequency per product** or **total quantity sold**, which may indirectly reflect product popularity. Would that be helpful?",
+      "sql_queries": [],
+      "steps": 3,
+      "last_stop_reason": "end_turn",
+      "error": null,
+      "exec_accurate": true,
+      "exec_detail": {
+        "passed": true,
+        "reason": "Case is unanswerable and the agent did not run SQL.",
+        "gold_sql": null,
+        "agent_sql": null,
+        "gold_rows": null,
+        "agent_rows": null
+      },
+      "judge": {
+        "verdict": "correct",
+        "reason": "The agent correctly identified that customer satisfaction ratings do not exist in the schema and explained why the question cannot be answered, matching the reference answer's semantic content despite providing more detailed explanation."
+      }
+    },
+    {
+      "id": "unanswerable-002",
+      "category": "unanswerable",
+      "question": "How much revenue was refunded in 2025?",
+      "gold_answer": "This cannot be answered because the schema contains no refund or return data.",
+      "final_answer": "Based on my investigation of the data, the warehouse **does not contain any refund information**. Here's what I found:\n\n- The `orders` table has no **status column** (e.g., \"refunded\", \"returned\", \"cancelled\").\n- All order **quantities are positive** (ranging from 1 to 5), so there are no negative quantities that could represent refunds.\n- There are no other tables (e.g., a `refunds` table) in the schema.\n\n**To answer \"how much revenue was refunded in 2025,\" the necessary data simply isn't available in the current warehouse.** You may want to check if:\n1. A refund/return status field needs to be added to the `orders` table.\n2. A separate `refunds` table exists in another data source that hasn't been loaded yet.",
+      "sql_queries": [
+        "\nSELECT \n    SUM(o.quantity * p.price) AS refunded_revenue\nFROM orders o\nJOIN products p ON o.product_id = p.id\nWHERE o.quantity < 0\n  AND YEAR(o.order_date) = 2025\n",
+        "\nSELECT MIN(quantity), MAX(quantity) FROM orders;\n"
+      ],
+      "steps": 5,
+      "last_stop_reason": "end_turn",
+      "error": null,
+      "exec_accurate": false,
+      "exec_detail": {
+        "passed": false,
+        "reason": "Case is unanswerable, but the agent ran SQL when it should have declined.",
+        "gold_sql": null,
+        "agent_sql": "\nSELECT MIN(quantity), MAX(quantity) FROM orders;\n",
+        "gold_rows": null,
+        "agent_rows": null
+      },
+      "judge": {
+        "verdict": "correct",
+        "reason": "The agent correctly identified that the schema contains no refund or return data, matching the reference answer's conclusion while providing helpful additional detail about the investigation."
+      }
+    }
+  ]
+}
