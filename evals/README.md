@@ -8,8 +8,8 @@ End-to-end evaluation of the text-to-SQL agent against a fixed set of cases.
 evals/
 ├── cases.py        — EvalCase dataclass + 20-case evaluation suite
 ├── runner.py       — runs run_agent() over all cases, collects AgentResult pairs
-├── scorers.py      — YOUR CODE: execution_accuracy() and llm_judge() stubs
-├── report.py       — prints summary table, saves JSON to evals/results/
+├── scorers.py      — execution accuracy and LLM judge scoring functions
+├── report.py       — prints summary/details, saves JSON to evals/results/
 ├── run_evals.py    — entry point: runner → scorers → report
 └── results/        — timestamped JSON output files (gitignored except .gitkeep)
 ```
@@ -20,39 +20,41 @@ evals/
 python evals/run_evals.py
 ```
 
-The harness runs even with unimplemented scorers — they show as `—` in the report.
+By default, the report prints each case header and final answer, then shows
+summary accuracy plus scoring details only for execution failures, judge
+`partial` verdicts, and judge `incorrect` verdicts.
 
-## Your job
+To show scoring details for every case:
 
-### 1. Implement the scorers in `scorers.py`
+```bash
+python evals/run_evals.py --show-all-details
+```
 
-Both functions have detailed docstrings explaining exactly what to build:
-
-**`execution_accuracy(case, result, db_path) -> bool`**
-- Execute `case.gold_sql` and the agent's last SQL against DuckDB
-- Compare result sets (multiset if `case.ordered=False`, ordered otherwise)
-- Return `False` for unanswerable cases where the agent still queried
-
-**`llm_judge(case, result) -> dict`**
-- Call `claude-haiku-4-5` with a grading prompt
-- Return `{"verdict": "correct"|"partial"|"incorrect", "reason": "..."}`
-- Parse robustly (strip code fences before `json.loads`)
-
-### 2. Case coverage in `cases.py`
+## Case coverage
 
 The 20-case suite covers:
+- Simple lookups, including multi-column selects
+- Scalar aggregations, including decimal averages
 - Multi-hop joins
 - Date range filters
 - NULL handling
 - Aggregations with HAVING
-- Ambiguous phrasings
-- More unanswerable variants
+- Unanswerable variants where the agent should decline to query
 
 ## Scoring signals
 
 | Signal | What it measures | When to trust it |
 |---|---|---|
-| `exec_accurate` | Did the agent's SQL return the same rows as gold SQL? | Strong for numeric/lookup; requires valid gold SQL |
-| `judge.verdict` | Does the natural-language answer match the gold answer? | Good for unanswerable cases; non-deterministic |
+| `exec_accurate` | Did the agent's last SQL return the same rows as gold SQL? | Strong for numeric/lookup; requires valid gold SQL |
+| `judge.verdict` | Does the natural-language answer match the gold answer? | Good for unanswerable cases and wording differences; non-deterministic |
 
-Use both together — execution accuracy can miss paraphrases, and the judge can be fooled by confident-sounding wrong answers.
+Execution scoring compares result sets, not SQL text. For answerable cases it
+runs both queries against `warehouse.duckdb`, canonicalizes values with `str()`,
+and compares either ordered row sequences or unordered row multisets depending
+on `case.ordered`. For unanswerable cases, execution passes only when the agent
+does not run SQL.
+
+The summary includes execution accuracy, LLM judge accuracy, and an overall
+accuracy that combines both scored signals. The saved JSON also includes
+per-case scoring details with reasons, compared SQL, compared rows, judge
+reasoning, and the agent's final answer.

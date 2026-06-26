@@ -3,12 +3,12 @@ Eval cases for the text-to-SQL agent.
 
 Each EvalCase pairs a natural-language question with the ground truth needed to
 score the agent's response. There are two scoring signals:
-  - execution_accuracy: run gold_sql and the agent's last SQL, compare result sets
+  - execution_accuracy: compare gold SQL rows with the agent's last SQL rows
   - llm_judge: compare gold_answer and the agent's final_answer via an LLM grader
 
 The suite contains 20 cases covering lookups, aggregations, multi-hop joins,
-date ranges, NULL handling, HAVING clauses, ambiguous phrasing, and questions
-that cannot be answered from the schema.
+date ranges, NULL handling, HAVING clauses, multi-column selects, decimal
+averages, and questions that cannot be answered from the schema.
 """
 
 from dataclasses import dataclass

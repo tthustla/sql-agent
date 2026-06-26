@@ -41,6 +41,11 @@ profile_table()     orders
 sql-agent/
 ├── data/
 │   └── build_db.py          # generates the synthetic warehouse
+├── evals/
+│   ├── cases.py             # fixed text-to-SQL eval cases
+│   ├── scorers.py           # execution accuracy + LLM judge scoring
+│   ├── report.py            # stdout/JSON eval reports
+│   └── run_evals.py         # eval entry point
 ├── src/
 │   ├── tools.py             # tool implementations + Anthropic schemas
 │   ├── agent.py             # agentic loop
@@ -96,18 +101,14 @@ python src/main.py --max-steps 20 "Give me a detailed breakdown by country and c
 Example output:
 
 ```
-[Turn 1]
-  Tool  : get_schema
-
-[Turn 2]
-  Claude: Now let me query total revenue by category.
-  Tool  : run_sql
-  Input : query = SELECT p.category, SUM(o.quantity * p.price) AS revenue ...
-
 The Electronics category had the most revenue at $14,398.20.
 ```
 
 If the model exhausts its output budget, the agent returns an explicit error with the partial response instead of treating it as a completed answer.
+
+The CLI prints only the final answer. Tool calls and intermediate model turns
+are captured internally in `AgentResult` for tests/evals, but are not logged for
+normal use.
 
 ---
 
@@ -122,6 +123,21 @@ pytest tests/ -v
 ```
 
 Tests use an isolated in-memory DuckDB fixture — the real `warehouse.duckdb` is never touched.
+
+---
+
+## Running evals
+
+```bash
+python evals/run_evals.py
+python evals/run_evals.py --show-all-details
+```
+
+The eval harness runs the agent against 20 fixed cases, prints each final
+answer, and reports execution accuracy, LLM judge accuracy, and combined
+overall accuracy. By default, detailed scoring comparisons are shown only for
+execution failures and judge `partial`/`incorrect` verdicts; use
+`--show-all-details` to inspect every case.
 
 ---
 

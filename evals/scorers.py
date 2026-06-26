@@ -25,50 +25,33 @@ def _fetch_rows(conn, query: str) -> list[tuple]:
 
 def execution_accuracy(case, result, db_path: str | Path) -> bool | None:
     """
-    Compare the agent's last SQL query result set against the gold SQL result set.
+    Return whether the agent's final SQL result matches the gold SQL result.
 
-    Returns True for an unanswerable case where the agent correctly avoided
-    running SQL.
+    The scorer uses result.sql_queries[-1] as the agent's answer query. For
+    answerable cases, it executes both that query and case.gold_sql against the
+    same DuckDB database, canonicalizes each value with str(), and compares the
+    resulting rows. Ordered cases require exact row sequence equality; unordered
+    cases compare sorted row multisets.
 
-    Implementation notes:
-    -------------------------
-    1. Take the agent's "answer query" from result.sql_queries.
-       Heuristic: use result.sql_queries[-1] (the last query run).
-       If result.sql_queries is empty, return False immediately.
+    Unanswerable cases are handled without executing SQL: they pass when
+    case.gold_sql is None and the agent did not run any SQL, and fail if the
+    agent queried anyway. Any SQL or DuckDB exception is scored as False.
 
-    2. If case.gold_sql is None (unanswerable case) but the agent ran any SQL,
-       return False — the agent should have declined to query.
-
-    3. Execute case.gold_sql against the DuckDB warehouse at db_path to get
-       gold_rows (list of tuples).
-
-    4. Execute result.sql_queries[-1] against the same db_path to get
-       agent_rows (list of tuples).
-
-    5. Compare:
-       - If case.ordered is False: compare as multisets (sort both, then ==).
-         Use sorted(gold_rows) == sorted(agent_rows) after converting rows to
-         a canonical form (e.g., tuple of str for each value).
-       - If case.ordered is True: compare sequences directly (gold_rows == agent_rows).
-
-    6. Return True if the result sets match, False otherwise.
-       Catch any DuckDB or SQL exception and return False.
-
-    Suggested imports:
-        import duckdb
-
-    Example:
-        conn = duckdb.connect(str(db_path), read_only=True)
-        gold_rows = conn.execute(case.gold_sql).fetchall()
-        agent_rows = conn.execute(result.sql_queries[-1]).fetchall()
-        conn.close()
+    Use execution_accuracy_details() when the report needs the reason, SQL, and
+    compared row sets in addition to the boolean score.
     """
     return execution_accuracy_details(case, result, db_path)["passed"]
 
 
 def execution_accuracy_details(case, result, db_path: str | Path) -> dict:
     """
-    Return execution accuracy plus enough context to explain the result.
+    Return execution accuracy plus context explaining the result.
+
+    The returned dict includes:
+      - passed: bool score
+      - reason: one-sentence explanation for pass/fail
+      - gold_sql / agent_sql: queries used for comparison, when available
+      - gold_rows / agent_rows: canonicalized fetched rows, when executed
     """
     detail = {
         "passed": None,
@@ -135,49 +118,19 @@ def execution_accuracy_details(case, result, db_path: str | Path) -> dict:
 
 def llm_judge(case, result) -> dict:
     """
-    Use an LLM to grade the agent's final answer against the gold answer.
+    Grade the final natural-language answer against the reference answer.
 
-    Returns a dict: {"verdict": "correct"|"partial"|"incorrect", "reason": "..."}
+    The judge sends the original question, case.gold_answer, and
+    result.final_answer to claude-haiku-4-5 and asks for strict JSON with:
+      {"verdict": "correct"|"partial"|"incorrect", "reason": "..."}
 
-    Implementation notes:
-    -------------------------
-    1. Build a grading prompt that includes:
-       - The original question (case.question)
-       - The reference answer (case.gold_answer)
-       - The agent's final answer (result.final_answer)
-       Instruct the model to return STRICT JSON ONLY with no prose outside the
-       JSON block:
-           {"verdict": "correct"|"partial"|"incorrect", "reason": "<one sentence>"}
+    Markdown JSON fences are stripped before parsing. Malformed JSON, unknown
+    verdicts, or missing string reasons return {"verdict": "error", ...} so the
+    report can surface the grading failure without crashing the eval run.
 
-    2. Call the Anthropic Messages API using claude-haiku-4-5 (fast + cheap).
-       Use the official `anthropic` SDK — already in requirements.txt.
-
-    3. Parse the response robustly:
-       - Strip any markdown code fences (```json ... ```) from the response text.
-       - Parse the stripped text with json.loads().
-       - If parsing fails, return {"verdict": "error", "reason": "<raw text>"}.
-
-    4. Return the parsed dict.
-
-    Suggested implementation skeleton:
-        import anthropic, json, re
-
-        client = anthropic.Anthropic()
-        prompt = f\"\"\"...\"\"\"
-        resp = client.messages.create(
-            model="claude-haiku-4-5",
-            max_tokens=256,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        raw = resp.content[0].text.strip()
-        # strip code fences
-        raw = re.sub(r"^```(?:json)?\\n?", "", raw)
-        raw = re.sub(r"\\n?```$", "", raw)
-        return json.loads(raw)
-
-    Note: the judge is non-deterministic. Run multiple times and average if you
-    want stable signal. Treat it as a soft, complementary signal to
-    execution_accuracy.
+    This is a soft, non-deterministic scoring signal. It complements
+    execution_accuracy, especially for unanswerable cases and harmless wording
+    differences in final answers.
     """
     import anthropic
 
