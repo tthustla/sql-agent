@@ -4,6 +4,7 @@ CLI entry point.
 Usage:
   python src/main.py "Which product category had the most revenue last month?"
   python src/main.py --max-steps 20 "Which product category had the most revenue last month?"
+  python src/main.py --log-turns "Which product category had the most revenue last month?"
   python src/main.py          # prompts interactively if no argument given
 """
 
@@ -25,6 +26,11 @@ def main():
     parser = argparse.ArgumentParser(description="SQL agent over the e-commerce warehouse.")
     parser.add_argument("question", nargs="*", help="Question to ask the agent.")
     parser.add_argument("--max-steps", type=int, default=10, help="Max tool-call rounds (default: 10).")
+    parser.add_argument(
+        "--log-turns",
+        action="store_true",
+        help="Print each assistant turn, including tool calls, as the agent runs.",
+    )
     args = parser.parse_args()
 
     if args.question:
@@ -36,7 +42,7 @@ def main():
             sys.exit(1)
 
     print()
-    result = run_agent(question, max_steps=args.max_steps)
+    result = run_agent(question, max_steps=args.max_steps, log_turns=args.log_turns)
     print(result.final_answer)
 
 

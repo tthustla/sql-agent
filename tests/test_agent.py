@@ -10,8 +10,6 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 import agent
 
@@ -40,7 +38,7 @@ def test_end_turn_with_no_tools():
     with patch.object(agent.client.messages, "create", mock_create):
         result = agent.run_agent("What is 6 times 7?")
 
-    assert result == "The answer is 42."
+    assert result.final_answer == "The answer is 42."
     assert mock_create.call_count == 1
 
 
@@ -53,7 +51,7 @@ def test_end_turn_concatenates_multiple_text_blocks():
     with patch.object(agent.client.messages, "create", mock_create):
         result = agent.run_agent("Give me a two-part answer.")
 
-    assert result == "Part one. Part two."
+    assert result.final_answer == "Part one. Part two."
 
 
 def test_model_call_retries_after_transient_failure():
@@ -67,7 +65,7 @@ def test_model_call_retries_after_transient_failure():
          patch("backoff._sync.time.sleep") as mock_sleep:
         result = agent.run_agent("Try again.")
 
-    assert result == "Recovered answer."
+    assert result.final_answer == "Recovered answer."
     assert mock_create.call_count == 2
     mock_sleep.assert_called_once()
 
@@ -84,7 +82,7 @@ def test_single_tool_call_then_end_turn():
          patch.dict(agent.TOOL_MAP, {"get_schema": mock_tool}):
         result = agent.run_agent("What tables exist?")
 
-    assert result == "There are 3 tables."
+    assert result.final_answer == "There are 3 tables."
     assert mock_create.call_count == 2
     mock_tool.assert_called_once_with()
 
@@ -143,7 +141,7 @@ def test_max_tokens_returns_error_with_partial_text():
     with patch.object(agent.client.messages, "create", mock_create):
         result = agent.run_agent("Give me a very long answer.")
 
-    assert result == "ERROR: model hit max_tokens before finishing. Partial response:\nPartial answer"
+    assert result.final_answer == "ERROR: model hit max_tokens before finishing. Partial response:\nPartial answer"
 
 
 def test_max_steps_exceeded():
@@ -157,8 +155,8 @@ def test_max_steps_exceeded():
          patch.dict(agent.TOOL_MAP, {"get_schema": mock_tool}):
         result = agent.run_agent("Loop forever.", max_steps=3)
 
-    assert "Error" in result
-    assert "3" in result
+    assert "Error" in result.final_answer
+    assert "3" in result.final_answer
     assert mock_create.call_count == 3
 
 
@@ -172,7 +170,7 @@ def test_unknown_tool_name_does_not_crash():
     with patch.object(agent.client.messages, "create", mock_create):
         result = agent.run_agent("Use a fake tool.")
 
-    assert result == "Recovered."
+    assert result.final_answer == "Recovered."
     # Use [-2]: agent.py appends the end_turn assistant turn after the second call,
     # so [-1] is that assistant turn and [-2] is the tool_result user turn.
     second_call_messages = mock_create.call_args_list[1].kwargs["messages"]
@@ -192,7 +190,7 @@ def test_tool_exception_is_caught():
          patch.dict(agent.TOOL_MAP, {"run_sql": mock_tool}):
         result = agent.run_agent("Run a bad query.")
 
-    assert result == "Handled."
+    assert result.final_answer == "Handled."
     second_call_messages = mock_create.call_args_list[1].kwargs["messages"]
     tool_result_content = second_call_messages[-2]["content"][0]["content"]
     assert "db exploded" in tool_result_content
@@ -221,3 +219,54 @@ def test_messages_accumulate_correctly():
     final_messages = mock_create.call_args_list[1].kwargs["messages"]
     roles = [m["role"] for m in final_messages]
     assert roles[:3] == ["user", "assistant", "user"]
+
+
+def test_log_turns_emits_each_assistant_turn():
+    """Optional logging shows assistant text and tool calls for each turn."""
+    mock_create = MagicMock(side_effect=[
+        api_response("tool_use", text_block("Let me check."), tool_block("get_schema", {})),
+        api_response("end_turn", text_block("There are 3 tables.")),
+    ])
+    mock_tool = MagicMock(return_value="schema")
+    log_lines = []
+
+    with patch.object(agent.client.messages, "create", mock_create), \
+         patch.dict(agent.TOOL_MAP, {"get_schema": mock_tool}):
+        agent.run_agent(
+            "What tables exist?",
+            log_turns=True,
+            logger=log_lines.append,
+        )
+
+    assert log_lines == [
+        (
+            "=== Agent turn 1 ===\n"
+            "\n"
+            "Assistant:\n"
+            "  Let me check.\n"
+            "\n"
+            "Tool call:\n"
+            "  name: get_schema\n"
+            "  input:\n"
+            "  {}\n"
+        ),
+        (
+            "=== Agent turn 2 ===\n"
+            "\n"
+            "Assistant:\n"
+            "  There are 3 tables.\n"
+        ),
+    ]
+
+
+def test_log_turns_is_off_by_default():
+    """Default runs stay quiet so callers can opt in at the CLI."""
+    mock_create = MagicMock(return_value=api_response(
+        "end_turn", text_block("Quiet answer.")
+    ))
+    logger = MagicMock()
+
+    with patch.object(agent.client.messages, "create", mock_create):
+        agent.run_agent("Stay quiet.", logger=logger)
+
+    logger.assert_not_called()

@@ -96,6 +96,9 @@ python src/main.py
 
 # Override the max tool-call rounds (default: 10)
 python src/main.py --max-steps 20 "Give me a detailed breakdown by country and category."
+
+# Show each assistant turn and tool call as the agent runs
+python src/main.py --log-turns "Which product category had the most revenue?"
 ```
 
 Example output:
@@ -106,9 +109,8 @@ The Electronics category had the most revenue at $14,398.20.
 
 If the model exhausts its output budget, the agent returns an explicit error with the partial response instead of treating it as a completed answer.
 
-The CLI prints only the final answer. Tool calls and intermediate model turns
-are captured internally in `AgentResult` for tests/evals, but are not logged for
-normal use.
+The CLI prints only the final answer by default. Pass `--log-turns` to also show
+each assistant turn and requested tool call as the agent runs.
 
 ---
 

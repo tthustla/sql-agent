@@ -3,7 +3,9 @@ SQL agent — agentic loop.
 """
 
 import os
+import json
 from dataclasses import dataclass
+from typing import Callable
 
 import anthropic
 import backoff
@@ -37,6 +39,27 @@ class AgentResult:
     error: str | None = None
 
 
+def _indent(text: str) -> str:
+    return "\n".join(f"  {line}" if line else "" for line in text.splitlines())
+
+
+def _format_agent_turn(step: int, content) -> str:
+    lines = [f"=== Agent turn {step} ==="]
+    for block in content:
+        if block.type == "text" and block.text.strip():
+            lines.extend(["", "Assistant:", _indent(block.text.strip())])
+        elif block.type == "tool_use":
+            tool_input = json.dumps(block.input, indent=2, sort_keys=True)
+            lines.extend([
+                "",
+                "Tool call:",
+                f"  name: {block.name}",
+                "  input:",
+                _indent(tool_input),
+            ])
+    return "\n".join(lines) + "\n"
+
+
 @backoff.on_exception(backoff.expo, Exception, max_tries=3)
 def _create_message(messages):
     return client.messages.create(
@@ -48,7 +71,12 @@ def _create_message(messages):
     )
 
 
-def run_agent(question: str, max_steps: int = 10) -> AgentResult:
+def run_agent(
+    question: str,
+    max_steps: int = 10,
+    log_turns: bool = False,
+    logger: Callable[[str], None] = print,
+) -> AgentResult:
     messages = [{"role": "user", "content": question}]
     step = 0
     sql_queries: list[str] = []
@@ -69,6 +97,8 @@ def run_agent(question: str, max_steps: int = 10) -> AgentResult:
             )
 
         messages.append({"role": "assistant", "content": response.content})
+        if log_turns:
+            logger(_format_agent_turn(step, response.content))
         # This simple agent keeps full history. For short SQL tasks that's fine,
         # but a longer-running agent would need context compaction here.
 
