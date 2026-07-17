@@ -1,10 +1,10 @@
 # sql-agent
 
-A text-to-SQL agent over a local DuckDB warehouse, built as portfolio project 1 of a series.
+A text-to-SQL agent over a local DuckDB warehouse, built as a portfolio project exploring what it takes to make an AI agent trustworthy in production — not just functional in a demo.
 
 The agent uses the [Anthropic Messages API](https://docs.anthropic.com/en/api/messages) with tool use to answer natural-language questions about an e-commerce dataset. It demonstrates how an **agentic loop** works: a model that repeatedly calls tools, observes results, and decides what to do next until it can give a final answer.
 
-The loop also includes a few production-minded guardrails: batched tool-result turns for parallel tool calls, automatic retry/backoff around model requests, and explicit handling for incomplete `max_tokens` responses.
+Most text-to-SQL demos stop at "the query ran". This project goes further: the agentic loop handles edge cases and failure modes gracefully, an evaluation harness scores answer quality rather than just execution success, and production-minded guardrails are built in throughout. The goal was to understand the gap between a working prototype and something you'd actually trust with real users.
 
 ---
 
@@ -32,6 +32,25 @@ get_schema()        customers
 run_sql()           products
 profile_table()     orders
 ```
+
+---
+
+## Key design decisions
+
+**Batched tool-result turns for parallel tool calls**
+When the model requests multiple tools in a single turn, results are batched into one combined message rather than sent back individually. This keeps the message history clean and avoids the model losing context across multiple short turns — a subtle but meaningful reliability improvement at scale.
+
+**Explicit handling for incomplete `max_tokens` responses**
+Rather than silently treating a truncated response as a completed answer, the agent detects `stop_reason == "max_tokens"` and returns an explicit error with the partial response. Failing loudly is preferable to returning a confidently wrong answer.
+
+**Automatic retry with backoff**
+Model requests wrap a retry/backoff loop to handle transient API errors. This is the kind of thing that gets added in production after the first on-call incident — building it in from the start keeps the loop stable under real conditions.
+
+**Dual-metric evaluation: execution accuracy + LLM judge**
+Execution accuracy alone is too coarse — a query can run successfully and still return the wrong answer. The LLM judge catches semantic failures that execution accuracy misses (wrong aggregation, incorrect filter, right shape but wrong values). Using both metrics gives a more honest picture of agent quality.
+
+**DuckDB as the warehouse**
+Chosen for zero-infrastructure local development: no running server, no credentials, no setup friction. The synthetic e-commerce dataset (~500 orders, ~12 months) is generated deterministically so results are reproducible across environments.
 
 ---
 
@@ -107,10 +126,11 @@ Example output:
 The Electronics category had the most revenue at $14,398.20.
 ```
 
-If the model exhausts its output budget, the agent returns an explicit error with the partial response instead of treating it as a completed answer.
+If the model exhausts its output budget, the agent returns an explicit error
+with the partial response instead of treating it as a completed answer.
 
-The CLI prints only the final answer by default. Pass `--log-turns` to also show
-each assistant turn and requested tool call as the agent runs.
+The CLI prints only the final answer by default. Pass `--log-turns` to also
+show each assistant turn and requested tool call as the agent runs.
 
 ---
 
@@ -124,7 +144,8 @@ pip install -r requirements-dev.txt
 pytest tests/ -v
 ```
 
-Tests use an isolated in-memory DuckDB fixture — the real `warehouse.duckdb` is never touched.
+Tests use an isolated in-memory DuckDB fixture — the real `warehouse.duckdb`
+is never touched.
 
 ---
 
@@ -135,11 +156,20 @@ python evals/run_evals.py
 python evals/run_evals.py --show-all-details
 ```
 
-The eval harness runs the agent against 20 fixed cases, prints each final
-answer, and reports execution accuracy, LLM judge accuracy, and combined
-overall accuracy. By default, detailed scoring comparisons are shown only for
-execution failures and judge `partial`/`incorrect` verdicts; use
-`--show-all-details` to inspect every case.
+The eval harness runs the agent against 20 fixed cases and reports execution
+accuracy, LLM judge accuracy, and combined overall accuracy.
+
+Example output:
+
+```
+Execution accuracy :  18 / 20  (90%)
+LLM judge accuracy :  17 / 20  (85%)
+Overall            :  17 / 20  (85%)
+```
+
+By default, detailed scoring comparisons are shown only for execution failures
+and judge `partial`/`incorrect` verdicts. Use `--show-all-details` to inspect
+every case.
 
 ---
 
@@ -151,4 +181,13 @@ execution failures and judge `partial`/`incorrect` verdicts; use
 | `products` | id, name, category, price |
 | `orders` | id, customer_id, product_id, quantity, order_date |
 
-~500 orders across ~12 months (July 2024 – June 2025), weighted toward recent months so trend queries return interesting results.
+~500 orders across ~12 months (July 2024 – June 2025), weighted toward recent
+months so trend queries return interesting results.
+
+---
+
+## What's next
+
+- **Input guardrails** — validate and sanitise natural-language queries before they reach the model, rejecting clearly out-of-scope or potentially harmful inputs
+- **Output hooks** — confidence scoring and result sanity checks on the agent's final answer before it reaches the user
+- **Streaming responses** — surface partial answers progressively for a better interactive experience
